@@ -1,0 +1,82 @@
+// =====================================================================
+// Financial & Regulatory Reporting - DAX
+// Tables : ChartOfAccounts, GLBalances, LoanBook, Deposits, Branches, Quarters
+// NOTE   : Written against the model in Dashboard Images/4.Data_Model.png.
+//          Not executed in this repo's build environment - check each result against
+//          02. SQL Scripts/Query Results/ after loading the data.
+//          Ratios are ILLUSTRATIVE and are not regulatory calculations.
+// =====================================================================
+
+// 1. QUARTERS (Indian financial year April - March)
+Quarters =
+ADDCOLUMNS (
+    DISTINCT ( GLBalances[QuarterEnd] ),
+    "Quarter",       "Q" & ( MOD ( MONTH ( [QuarterEnd] ) - 4, 12 ) / 3 + 1 ) & " FY" & RIGHT ( YEAR ( EDATE ( [QuarterEnd], 9 ) ), 2 ),
+    "FinancialYear", "FY " & ( YEAR ( EDATE ( [QuarterEnd], 9 ) ) - 1 ) & "-" & RIGHT ( YEAR ( EDATE ( [QuarterEnd], 9 ) ), 2 )
+)
+
+// 2. CALCULATED COLUMNS
+// LoanBook[Required Class]  (illustrative days-past-due rule)
+Required Class =
+SWITCH ( TRUE (),
+    LoanBook[DPD] <= 90,  "Standard",
+    LoanBook[DPD] <= 455, "Substandard",
+    LoanBook[DPD] <= 910, "Doubtful",
+    "Loss" )
+
+// LoanBook[Required Provision]
+Required Provision =
+LoanBook[Outstanding] *
+SWITCH ( LoanBook[Required Class], "Standard", 0.004, "Substandard", 0.15, "Doubtful", 0.40, 1 )
+
+// LoanBook[Is Misclassified]
+Is Misclassified = IF ( LoanBook[AssetClass] = "Standard" && LoanBook[Required Class] <> "Standard", 1, 0 )
+
+// GLBalances[Signed Amount]  (income positive, expense negative, for profit)
+Signed Amount =
+IF ( RELATED ( ChartOfAccounts[Class] ) = "Expense", -GLBalances[Amount], GLBalances[Amount] )
+
+// 3. MEASURES - Financial statements   (display folder: Financials)
+GL Amount = SUM ( GLBalances[Amount] )
+Total Assets = CALCULATE ( [GL Amount], ChartOfAccounts[Class] = "Assets" )
+Total Deposits = CALCULATE ( [GL Amount], ChartOfAccounts[ReportLine] = "Deposits" )
+Gross Advances (GL) = CALCULATE ( [GL Amount], ChartOfAccounts[GLCode] = "1210" )
+Interest Earned = CALCULATE ( [GL Amount], ChartOfAccounts[ReportLine] = "Interest earned" )
+Interest Expended = CALCULATE ( [GL Amount], ChartOfAccounts[ReportLine] = "Interest expended" )
+Net Interest Income = [Interest Earned] - [Interest Expended]
+Other Income = CALCULATE ( [GL Amount], ChartOfAccounts[ReportLine] = "Other income" )
+Operating Expenses = CALCULATE ( [GL Amount], ChartOfAccounts[ReportLine] = "Operating expenses" )
+Net Profit = CALCULATE ( SUM ( GLBalances[Signed Amount] ), ChartOfAccounts[Statement] = "PL" )
+
+// Balance-sheet items are point-in-time: take the last quarter in the filter context
+Closing Balance =
+CALCULATE ( [GL Amount], LASTNONBLANK ( Quarters[QuarterEnd], [GL Amount] ) )
+
+// 4. MEASURES - Ratios   (display folder: Ratios; quarterly figures x 4 to annualise)
+NIM % =
+DIVIDE ( [Net Interest Income] * 4,
+         CALCULATE ( [GL Amount], ChartOfAccounts[GLCode] IN { "1210", "1110", "1120" } ) )
+Cost to Income % = DIVIDE ( [Operating Expenses], [Net Interest Income] + [Other Income] )
+ROA % = DIVIDE ( [Net Profit] * 4, [Total Assets] )
+CASA % = DIVIDE ( CALCULATE ( [GL Amount], ChartOfAccounts[GLCode] IN { "2110", "2120" } ), [Total Deposits] )
+Credit Deposit % = DIVIDE ( [Gross Advances (GL)], [Total Deposits] )
+
+// 5. MEASURES - Asset quality   (display folder: Asset Quality)
+Loan Outstanding = SUM ( LoanBook[Outstanding] )
+Gross NPA = CALCULATE ( [Loan Outstanding], LoanBook[Required Class] <> "Standard" )
+Gross NPA (Reported) = CALCULATE ( [Loan Outstanding], LoanBook[AssetClass] <> "Standard" )
+GNPA % = DIVIDE ( [Gross NPA], [Loan Outstanding] )
+GNPA Reported % = DIVIDE ( [Gross NPA (Reported)], [Loan Outstanding] )
+NPA Provisions = CALCULATE ( SUM ( LoanBook[ProvisionHeld] ), LoanBook[Required Class] <> "Standard" )
+NNPA % = DIVIDE ( [Gross NPA] - [NPA Provisions], [Loan Outstanding] - [NPA Provisions] )
+PCR % = DIVIDE ( [NPA Provisions], [Gross NPA] )
+SMA % = DIVIDE ( CALCULATE ( [Loan Outstanding], LoanBook[DPD] >= 1, LoanBook[DPD] <= 90 ), [Loan Outstanding] )
+Misclassified Loans = SUM ( LoanBook[Is Misclassified] )
+Provision Shortfall = SUMX ( LoanBook, MAX ( 0, LoanBook[Required Provision] - LoanBook[ProvisionHeld] ) )
+
+// 6. MEASURES - Controls   (display folder: Controls)
+Advances Recon Difference = [Gross Advances (GL)] - [Loan Outstanding]
+Advances Recon Status = IF ( ABS ( [Advances Recon Difference] ) <= 1, "Reconciled", "Break" )
+Balance Check Difference =
+CALCULATE ( [GL Amount], ChartOfAccounts[Class] = "Assets" )
+    - CALCULATE ( [GL Amount], ChartOfAccounts[Class] IN { "Liabilities", "Equity" } )

@@ -1,0 +1,26 @@
+GLCode,GLName,Statement,Class,ReportLine
+1010,Cash in hand,BS,Assets,Cash & balances with RBI
+1020,Balance with RBI,BS,Assets,Cash & balances with RBI
+1030,Balances with banks,BS,Assets,Balances with banks
+1110,Government securities (SLR),BS,Assets,Investments
+1120,Other investments,BS,Assets,Investments
+1210,Loans and advances - gross,BS,Assets,Advances
+1290,Provisions on advances,BS,Assets,Advances
+1310,Fixed assets,BS,Assets,Fixed assets
+1410,Other assets,BS,Assets,Other assets
+2010,Share capital,BS,Equity,Capital & reserves
+2020,Reserves and surplus,BS,Equity,Capital & reserves
+2110,Savings deposits,BS,Liabilities,Deposits
+2120,Current deposits,BS,Liabilities,Deposits
+2130,Term deposits,BS,Liabilities,Deposits
+2210,Borrowings,BS,Liabilities,Borrowings
+2310,Other liabilities,BS,Liabilities,Other liabilities & provisions
+4010,Interest on advances,PL,Income,Interest earned
+4020,Interest on investments,PL,Income,Interest earned
+4110,Fee and commission income,PL,Income,Other income
+5010,Interest on deposits,PL,Expense,Interest expended
+5020,Interest on borrowings,PL,Expense,Interest expended
+5110,Staff costs,PL,Expense,Operating expenses
+5120,Other operating expenses,PL,Expense,Operating expenses
+5210,Provisions and contingencies,PL,Expense,Provisions
+5310,Income tax,PL,Expense,Tax

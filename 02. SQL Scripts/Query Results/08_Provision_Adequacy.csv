@@ -1,0 +1,13 @@
+asset_class,Segment,loans,outstanding_lakh,required_provision,provision_held,surplus_shortfall
+Doubtful,Personal Loan,26,163.0,65.1,39.1,-26.0
+Substandard,Gold Loan,14,39.0,5.8,7.9,2.1
+Substandard,Vehicle Loan,16,141.0,21.2,31.9,10.7
+Substandard,Agriculture,30,199.0,29.9,44.8,14.9
+Substandard,Personal Loan,54,283.0,42.5,63.0,20.5
+Doubtful,Vehicle Loan,17,118.0,47.3,69.0,21.8
+Doubtful,Agriculture,19,112.0,44.9,69.5,24.5
+Doubtful,Gold Loan,29,107.0,42.7,67.6,24.9
+Substandard,Home Loan,56,1769.0,265.3,377.6,112.3
+Doubtful,Home Loan,55,1826.0,730.3,1095.0,364.7
+Substandard,MSME,94,4987.0,748.0,1125.0,377.0
+Doubtful,MSME,53,3019.0,1207.8,1834.1,626.3
